@@ -89,12 +89,47 @@ const getCheckInPermission = async(req, res)=>{
 const setStudentAttendance = async(req, res)=>{
     try{
         console.log('Request to set attendance has been made');
-        const {studentID, classSessionID, attendanceStatus} = req.body;
-        const result = await studentServices.setStudentAttendance(studentID, classSessionID, attendanceStatus);
+        const {studentID, classSessionID, classID, attendanceStatus} = req.body;
+        const result = await studentServices.setStudentAttendance(studentID, classID, classSessionID, attendanceStatus);
         res.json(result);
     }catch(error){
         console.log(error);
         res.status(500).json(error.message); 
+    }
+}
+
+const getStudentAttendanceData = async(req, res)=>{
+    try{
+        console.log('Request for attendance data has been made');
+        const {studentID} = req.params;
+        const result = await studentServices.getAttendanceData(studentID);
+        if(result.length>0){
+            res.json(result);
+        }
+        else{
+            throw new Error('Something went wrong');
+        }
+    }catch(e){
+        console.log(error);
+        res.status(500).json(error.message); 
+    }
+}
+
+const getAttendanceDetails = async(req, res)=>{
+    try{
+        console.log('Request for attendance details has been made');
+        const {classID, studentID} = req.params;
+        const result = await studentServices.getAttendanceDetails(classID, studentID);
+        if(result.length>0){
+            res.json(result);
+        }
+        else{
+            throw new Error('Something went wrong');
+        }
+    }catch(e){
+        console.log(error);
+        res.status(500).json(error.message)
+        
     }
 }
 
@@ -105,5 +140,7 @@ module.exports = {
     scanFace, 
     getUpcomingClassSessions,
     getCheckInPermission,
-    setStudentAttendance
+    setStudentAttendance,
+    getStudentAttendanceData,
+    getAttendanceDetails
 }

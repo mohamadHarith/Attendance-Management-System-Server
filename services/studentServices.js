@@ -143,14 +143,14 @@ const getCheckInPermission = async(studentID, classSessionID )=>{
     }
 }
 
-const setStudentAttendance = async(studentID, classSessionID, attendanceStatus)=>{
+const setStudentAttendance = async(studentID, classID, classSessionID, attendanceStatus)=>{
     try{
          //set attendance
         let queryResult = {
             message: '',
             querySuccessful: false
         }
-         const result = await studentDB.setStudentAttendance(studentID, classSessionID, attendanceStatus);
+         const result = await studentDB.setStudentAttendance(studentID, classID, classSessionID, attendanceStatus);
            if (result.length == 1){
               queryResult.message = 'Succesfully checked in.'
               queryResult.querySuccessful = true;
@@ -162,7 +162,77 @@ const setStudentAttendance = async(studentID, classSessionID, attendanceStatus)=
                 return queryResult;
         } 
     }catch(error){
+        console.log(error.message);
+        throw new Error(error.message);
+    }
+}
 
+const getAttendancePercentage = async(studentID, classID)=>{
+    try{
+        const numberofClassSessions = await studentDB.getNumberOfClassSessions(classID);
+        const numberofAttendance = await studentDB.getNumberOfStudentAttendance(classID, studentID);
+        const attendancePercentage = {
+            numberOfClassSessionsAttended: numberofAttendance[0].count,
+            numberOfTotalClassSessions: numberofClassSessions[0].count,
+            percentage: (parseInt(numberofAttendance[0].count)/parseInt(numberofClassSessions[0].count))*100
+        }
+        return attendancePercentage;
+    }catch(error){
+        console.log(error.message);
+        throw new Error(error.message);
+    }
+}
+
+const getAttendanceData = async(studentID)=>{
+    try{
+        const attendanceData = await studentDB.getEnrolledClassList(studentID).then(async (classList)=>{
+            if(classList.length > 0){
+                
+                for(var i=0; i<classList.length; i++){
+                    //const attendanceData = await studentDB.getAttendanceForClassSessions(classList[i].Class_ID, studentID);
+                    const attendancePercentage = await getAttendancePercentage(studentID, classList[i].Class_ID);
+                    classList[i].numberOfClassSessions = attendancePercentage.numberOfTotalClassSessions;
+                    classList[i].numberOfClassSessionsAttended = attendancePercentage.numberOfClassSessionsAttended;
+                    classList[i].attendancePercentage = attendancePercentage.percentage;
+
+                    //classList[i].attendanceData = attendanceData;
+                }
+                return classList;
+            }
+            else{
+                throw new Error('Something went wrong');
+            }
+            
+        })
+        return attendanceData;
+    }catch(error){
+        console.log(error.message);
+        throw new Error(error.message);
+    }
+}
+
+const getAttendanceDetails = async(classID, studentID)=>{
+    try{
+        const attendanceDetails =  await studentDB.getAttendanceForClassSessions(classID, studentID);
+        if(attendanceDetails.length>0){
+            attendanceDetails.forEach((item)=>{
+                item.Class_Session_Start_Time = moment(item.Class_Session_Start_Time).format('hh:mma');
+                item.Class_Session_End_Time = moment(item.Class_Session_End_Time).format('hh:mma');
+                item.Week = moment(item.Class_Session_Date).diff(moment(item.Trimester_Start_Date), 'weeks')+1;
+                item.Day = moment(item.Class_Session_Date).format('dddd')
+                item.Class_Session_Date = moment( item.Class_Session_Date).format('DD MMM YYYY');
+                if(item.Attendance_Status == null){
+                    item.Attendance_Status = 'Absent'
+                }
+                delete(item.Trimester_Start_Date);
+            });
+
+        }
+        return attendanceDetails;
+        
+    }catch(error){
+        console.log(error.message);
+        throw new Error(error.message);
     }
 }
 
@@ -172,12 +242,16 @@ module.exports={
     recogniseFace, 
     getUpcomingClassSessions,
     getCheckInPermission,
-    setStudentAttendance
+    setStudentAttendance,
+    getAttendancePercentage,
+    getAttendanceData,
+    getAttendanceDetails
 }
 
-// const test = async ()=>{ 
-//         console.log(await checkIn('1151101633', 6));
-// }
+const test = async ()=>{ 
+   console.log( await getAttendanceDetails(11,1151101633));
+   
+}
     
-// test();
+test();
 

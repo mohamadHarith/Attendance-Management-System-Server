@@ -23,7 +23,11 @@ router.post('/upcomingClassSessions', studentController.getUpcomingClassSessions
 
 router.post('/checkInPermission', studentController.getCheckInPermission);
 
-router.post('/setStudentAttendance', studentController.setStudentAttendance)
+router.post('/setStudentAttendance', studentController.setStudentAttendance);
+
+router.get('/getStudentAttendanceData/:studentID', studentController.getStudentAttendanceData);
+
+router.get('/getAttendanceDetails/:classID/:studentID', studentController.getAttendanceDetails)
 
 
 module.exports = router;

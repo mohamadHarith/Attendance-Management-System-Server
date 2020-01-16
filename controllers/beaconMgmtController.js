@@ -50,11 +50,11 @@ const removeBeacon = async(req, res)=>{
 
 const getBeaconUUIDByVenue = async(req, res)=>{
     try{
-        
         const {venueID} = req.body;
         console.log('from beacon controller', req.body);
         
         const beaconUUID = await beaconMgmtServices.getBeaconUUIDByVenue(venueID);
+        console.log('from beacon controller', beaconUUID);
         res.json(beaconUUID)
     }catch(e){
         console.log(e);

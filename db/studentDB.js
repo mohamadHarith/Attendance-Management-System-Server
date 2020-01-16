@@ -15,7 +15,7 @@ const setStudentFaceData = async(studentID, faceDescriptor)=>{
         // .returning('Student_ID');
         return await db('Student').update({'Face_Descriptor': faceDescriptor}).where('Student_ID', studentID);
     }catch(error){
-        throw new Error(error.message)
+        throw new Error(error.message);
     }
 }
 
@@ -23,7 +23,7 @@ const getStudentFaceData = async(studentID)=>{
     try{
         return await db.select('Face_Descriptor', 'Student_Name').from('Student').where('Student_ID', studentID);
     }catch(error){
-        console.log(error.message);
+        throw new Error(error.message);
         
     }
 }
@@ -47,11 +47,10 @@ const getUpcomingClassSessions = async(studentID)=>{
         'Trimester.Name as Trimester_Name', 'Trimester.Start_Date as Trimester_Start_Date',  
         'Trimester.End_Date as Trimester_End_Date','Class Session.Class_Session_ID', 
         'Class Session.Class_ID','Class Session.Date', 
-        // 'Class Session.Week',
         'Class Session.Start_Time','Class Session.End_Time', 
         'Subject.Subject_Name', 
-        'Class.Type', 'Class.Section', 'Venue.Venue_ID', 
-        'Venue.Name as Venue_Name'
+        'Class.Type', 'Class.Section', 'Class.Class_ID',
+        'Venue.Venue_ID', 'Venue.Name as Venue_Name'
         )
         .from('Enrolment')
         .innerJoin('Trimester', 'Enrolment.Trimester_ID', 'Trimester.Trimester_ID')
@@ -63,7 +62,7 @@ const getUpcomingClassSessions = async(studentID)=>{
         .where('Class Session.Date', new Date())
         .where('Class Session.End_Time', '>', new Date())  
     }catch(error){
-        console.log(error.message);  
+        throw new Error(error.message);  
     }
 }
 
@@ -76,7 +75,7 @@ const getCheckInPermission = async(classSessionID)=>{
         .where('Start_Time', '<', new Date())
         .where('End_Time', '>', new Date()) 
     }catch(error){
-        console.log(error.message);  
+        throw new Error(error.message);
     }
 }
 
@@ -86,22 +85,77 @@ const getStudentAttendanceData = async(studentID, classSessionID)=>{
         .where('Class_Session_ID', classSessionID)
         .where('Student_ID', studentID)
     }catch(error){
-        console.log(error.message);  
+        throw new Error(error.message);  
     }
 }
 
-const setStudentAttendance = async(studentID, classSessionID, attendanceStatus)=>{
+const setStudentAttendance = async(studentID, classID, classSessionID, attendanceStatus)=>{
     try{
         return await db('Attendance').insert({
             Class_Session_ID: classSessionID,
+            Class_ID: classID,
             Student_ID: studentID,
             Attendance_Status: attendanceStatus
         })
         .returning('Attendance_ID');
     }catch(error){
-        console.log(error.message); 
+        throw new Error(error.message);
     }
 }
+
+const getNumberOfClassSessions = async(classID)=>{
+    try{
+        return await db('Class Session').count('Class_ID').where('Class_ID', classID);
+    }catch(error){
+        throw new Error(error.message);
+    }
+}
+
+const getNumberOfStudentAttendance = async(classID, studentID)=>{
+    try{
+        return await db('Attendance').count('Class_ID')
+        .where('Class_ID', classID)
+        .where('Student_ID', studentID)
+    }catch(error){
+        throw new Error(error.message);
+    }
+}
+
+const getEnrolledClassList = async(studentID)=>{
+    try{
+        return await db.select('Class.Class_ID', 'Class.Type', 'Class.Section', 'Subject.Subject_ID', 'Subject.Subject_Name')
+        .from('Enrolment')
+        .innerJoin('Class', 'Enrolment.Class_ID', 'Class.Class_ID')
+        .innerJoin('Subject', 'Class.Subject_ID', 'Subject.Subject_ID')
+        .where('Enrolment.Student_ID', studentID)
+    }catch(error){
+        throw new Error(error.message);
+    }
+}
+
+const getAttendanceForClassSessions = async(classID, studentID)=>{
+    try{
+        return await db.select(
+           'Class Session.Class_ID', 'Class Session.Class_Session_ID', 'Class Session.Date as Class_Session_Date', 
+            'Class Session.Start_Time as Class_Session_Start_Time', 'Class Session.End_Time as Class_Session_End_Time',
+            'Class Session.Venue_ID', 'Trimester.Start_Date as Trimester_Start_Date',
+            'Attendance.Attendance_ID', 'Attendance.Attendance_Status'
+        )
+        .from('Class Session')
+        .innerJoin('Enrolment', 'Class Session.Class_ID', 'Enrolment.Class_ID')
+        .innerJoin('Trimester', 'Enrolment.Trimester_ID', 'Trimester.Trimester_ID')
+        .leftOuterJoin('Attendance', 'Class Session.Class_Session_ID', 'Attendance.Class_Session_ID')
+        .where('Trimester.Start_Date', '<', new Date())
+        .where('Trimester.End_Date', '>', new Date())
+        .where('Enrolment.Student_ID', studentID)
+        .where('Enrolment.Class_ID', classID)
+    }catch(error){
+        throw new Error(error.message);
+    }
+}
+
+
+
 
 
 module.exports = {
@@ -111,11 +165,15 @@ module.exports = {
     getUpcomingClassSessions,
     getCheckInPermission,
     getStudentAttendanceData,
-    setStudentAttendance
+    setStudentAttendance,
+    getNumberOfClassSessions,
+    getNumberOfStudentAttendance,
+    getEnrolledClassList, 
+    getAttendanceForClassSessions
 };
 
 // const test = async ()=>{ 
-//     const data = await setStudentAttendance('1151101633', '6', 'Present');
+//     const data = await getAttendanceForClassSessions(3,1151101633);
 //     console.log(data);
     
 // }
