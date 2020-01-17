@@ -8,6 +8,8 @@ class imageUploader{
 			//storage engine for enrol face 
 			storage = multer.diskStorage({
 				destination: (req, file, cb)=>{
+					console.log('req to upload image has been made');
+					
 					const path = `./studentImages/${req.body.studentID}`;
 					fs.mkdirSync(path, { recursive: true }, (err) => {
 						if (err) throw err;

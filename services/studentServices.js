@@ -8,6 +8,8 @@ const checkFaceEnrolment = async (studentID)=>{
     try{
         return await studentDB.retrieveFaceEnrolmentStatus(studentID);
     }catch(e){
+        console.log(error.message);
+        
         throw new Error(e.message);
     }
 }
@@ -194,8 +196,6 @@ const getAttendanceData = async(studentID)=>{
                     classList[i].numberOfClassSessions = attendancePercentage.numberOfTotalClassSessions;
                     classList[i].numberOfClassSessionsAttended = attendancePercentage.numberOfClassSessionsAttended;
                     classList[i].attendancePercentage = attendancePercentage.percentage;
-
-                    //classList[i].attendanceData = attendanceData;
                 }
                 return classList;
             }
@@ -236,6 +236,108 @@ const getAttendanceDetails = async(classID, studentID)=>{
     }
 }
 
+const getScheduleForCurrentWeek = async (studentID)=>{
+    try{
+        //get current week
+        //get  first date of the week
+        //add 5 days for the last date of the week
+        const currentTrimester = await studentDB.getCurrentTrimesterID();
+
+        const currentWeek =  moment(new Date()).diff(moment(currentTrimester[0].Start_Date), 'weeks');
+
+        //const firstDateOfTheWeek = moment(currentTrimester[0].Start_Date).add(currentWeek, 'w').format('DD/MM/YYYY');
+        //const lastDateOfTheWeek = moment(firstDateOfTheWeek).add(4, 'd').format('DD/MM/YYYY');
+
+        const firstDateOfTheWeek = moment(currentTrimester[0].Start_Date).add(currentWeek, 'w').toDate();
+        const lastDateOfTheWeek = moment(firstDateOfTheWeek).add(4, 'd').toDate();
+
+        const listOfClassSessionsBetweenDate = await studentDB.getListOfClassSessionsBetweenDate(studentID, firstDateOfTheWeek, lastDateOfTheWeek)
+
+        listOfClassSessionsBetweenDate.forEach((item)=>{
+            item.Day = moment(item.Date).format('dddd');
+            item.Date = moment(item.Date).format('DD/MM/YYYY');
+            item.Start_Time = moment(item.Start_Time).format('hh:mma');
+            item.End_Time = moment(item.End_Time).format('hh:mma');
+        })
+
+        let mondayClasses = {
+            name: 'Monday',
+            classes: []
+        }
+        let tuesdayClasses = {
+            name: 'Tuesday',
+            classes: []
+        }
+        let wednesdayClasses = {
+            name: 'Wednesday',
+            classes: []
+        }
+        let thursdayClasses = {
+            name: 'Thursday',
+            classes: []
+        }
+        let fridayClasses = {
+            name: 'Friday',
+            classes: []
+        }
+
+        for(var i=0; i<listOfClassSessionsBetweenDate.length; i++){
+            if(listOfClassSessionsBetweenDate[i].Day == 'Monday'){
+                mondayClasses.classes.push(listOfClassSessionsBetweenDate[i]);
+            }
+           else if(listOfClassSessionsBetweenDate[i].Day == 'Tuesday'){
+                tuesdayClasses.classes.push(listOfClassSessionsBetweenDate[i]);
+            }
+           else if(listOfClassSessionsBetweenDate[i].Day == 'Wednesday'){
+                wednesdayClasses.classes.push(listOfClassSessionsBetweenDate[i]);
+            }
+           else if(listOfClassSessionsBetweenDate[i].Day == 'Thursday'){
+                thursdayClasses.classes.push(listOfClassSessionsBetweenDate[i]);
+            }
+           else if(listOfClassSessionsBetweenDate[i].Day == 'Friday'){
+                fridayClasses.classes.push(listOfClassSessionsBetweenDate[i]);
+            }            
+        }
+
+        let scheduleData = [];
+
+        if(mondayClasses.classes.length>0){
+            scheduleData.push(mondayClasses);
+        }
+        if(tuesdayClasses.classes.length>0){
+            scheduleData.push(tuesdayClasses);
+        }
+        if(wednesdayClasses.classes.length>0){
+            scheduleData.push(wednesdayClasses);
+        }
+        if(thursdayClasses.classes.length>0){
+            scheduleData.push(thursdayClasses);
+        }
+        if(fridayClasses.classes.length>0){
+            scheduleData.push(fridayClasses);
+        }
+        
+
+        return scheduleData;
+
+
+
+    }catch(error){
+        console.log(error.message);
+        throw new Error(error.message);
+    }
+}
+
+const authUser = async(studentID, password)=>{
+    try {
+        const result = await studentDB.authUser(studentID, password);
+        return result;
+    } catch (error) {
+        console.log(error.message);
+        throw new Error(error.message);
+    }
+}
+
 module.exports={
     checkFaceEnrolment, 
     enrolFace, 
@@ -245,13 +347,15 @@ module.exports={
     setStudentAttendance,
     getAttendancePercentage,
     getAttendanceData,
-    getAttendanceDetails
+    getAttendanceDetails,
+    getScheduleForCurrentWeek,
+    authUser
 }
 
-const test = async ()=>{ 
-   console.log( await getAttendanceDetails(11,1151101633));
+// const test = async ()=>{ 
+//    console.log( await getScheduleForCurrentWeek(1151101633));
    
-}
+// }
     
-test();
+// test();
 

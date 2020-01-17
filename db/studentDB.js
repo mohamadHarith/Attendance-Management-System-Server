@@ -2,7 +2,11 @@ const db = require('./config');
 const moment = require('moment');
 
 const retrieveFaceEnrolmentStatus = async (studentID)=>{
-    return await db.select('Face_Enrolment_Status').from('Student').where('Student_ID', studentID);
+   try{
+        return await db.select('Face_Enrolment_Status').from('Student').where('Student_ID', studentID);
+   }catch(error){
+       throw new Error(error.message);
+   }
 }
 
 const setStudentFaceData = async(studentID, faceDescriptor)=>{
@@ -13,7 +17,7 @@ const setStudentFaceData = async(studentID, faceDescriptor)=>{
         //     Face_Image_Path: studentImagePath 
         // })
         // .returning('Student_ID');
-        return await db('Student').update({'Face_Descriptor': faceDescriptor}).where('Student_ID', studentID);
+        return await db('Student').update({'Face_Descriptor': faceDescriptor, 'Face_Enrolment_Status':true}).where('Student_ID', studentID);
     }catch(error){
         throw new Error(error.message);
     }
@@ -23,6 +27,7 @@ const getStudentFaceData = async(studentID)=>{
     try{
         return await db.select('Face_Descriptor', 'Student_Name').from('Student').where('Student_ID', studentID);
     }catch(error){
+        
         throw new Error(error.message);
         
     }
@@ -154,6 +159,54 @@ const getAttendanceForClassSessions = async(classID, studentID)=>{
     }
 }
 
+const getScheduleForCurrentWeek = async()=>{
+    try{
+        return await db.select('')
+    }catch(error){
+        throw new Error(error.message);
+    }
+}
+
+const getCurrentTrimesterID = async()=>{
+    try{
+        return await db.select('Trimester_ID', 'Start_Date').from('Trimester')
+        .where('Start_Date', '<', new Date())
+        .where('End_Date', '>', new Date())
+    }catch(error){
+        throw new Error(error.message);
+    }
+}
+
+const getListOfClassSessionsBetweenDate = async(studentID, startDate, EndDate)=>{
+    try{
+        return await db.select(
+            'Enrolment.Student_ID', 'Enrolment.Class_ID', 'Class.Class_ID', 'Class.Subject_ID', 
+            'Class.Type', 'Class.Section', 'Subject.Subject_ID', 'Subject.Subject_Name', 
+            'Class Session.Venue_ID', 'Class Session.Date', 'Class Session.Start_Time', 
+            'Class Session.End_Time'
+            )
+            .from('Class Session')
+            .innerJoin('Class', 'Class Session.Class_ID', 'Class.Class_ID')
+            .innerJoin('Subject', 'Class.Subject_ID', 'Subject.Subject_ID')
+            .innerJoin('Enrolment', 'Class.Class_ID', 'Enrolment.Class_ID')
+            .where('Enrolment.Student_ID', studentID)
+            .whereBetween('Class Session.Date', [startDate, EndDate])
+    }catch(error){
+        throw new Error(error.message);
+    }
+}
+
+const authUser = async(studentID, password)=>{
+    try{
+        return await db.select('Student_Name', 'Student_ID')
+        .from('Student')
+        .where('Student_ID', studentID)
+        .where('Student_Password', password)
+    }catch(error){
+        throw new Error(error.message);
+    }
+}
+
 
 
 
@@ -169,11 +222,14 @@ module.exports = {
     getNumberOfClassSessions,
     getNumberOfStudentAttendance,
     getEnrolledClassList, 
-    getAttendanceForClassSessions
+    getAttendanceForClassSessions,
+    getCurrentTrimesterID,
+    getListOfClassSessionsBetweenDate,
+    authUser
 };
 
 // const test = async ()=>{ 
-//     const data = await getAttendanceForClassSessions(3,1151101633);
+//     const data = await authUser(1151101633,  'HRwillsucceed9719$');
 //     console.log(data);
     
 // }

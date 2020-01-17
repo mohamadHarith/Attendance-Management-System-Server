@@ -133,6 +133,44 @@ const getAttendanceDetails = async(req, res)=>{
     }
 }
 
+const getCurrentWeekSchedule = async (req, res)=>{
+    try{
+        console.log('Request for schedule has been made');
+        const {studentID} = req.params;
+        const result = await studentServices.getScheduleForCurrentWeek(studentID);
+        if(result.length>0){
+            res.json(result);
+        }
+        else{
+            throw new Error('Something went wrong');
+        }
+    }catch(error){
+        console.log(error);
+        res.status(500).json(error.message)
+        
+    }
+}
+
+const authUser = async (req,res)=>{
+    try {
+        console.log('req for auth');
+        const {studentID, password} = req.body;
+        const result = await studentServices.authUser(studentID, password);
+        console.log(result);
+        
+        if(result.length>0){
+            res.json(result);
+        }
+        else{
+            throw new Error('Invalid user')
+        }
+        
+    } catch (error) {
+        console.log(error);
+        res.status(500).json(error.message)
+    }
+}
+
 module.exports = {
     checkFaceEnrolment,
     enrolFace, 
@@ -142,5 +180,8 @@ module.exports = {
     getCheckInPermission,
     setStudentAttendance,
     getStudentAttendanceData,
-    getAttendanceDetails
+    getAttendanceDetails,
+    getCurrentWeekSchedule,
+    authUser
+
 }
