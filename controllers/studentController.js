@@ -4,6 +4,7 @@ const path = require('path');
 
 const checkFaceEnrolment = async(req, res)=>{
     try{
+        console.log('Request to check enrolment has been made');
         const studentID = req.body.studentID;
         const faceEnrolmentStatus = await studentServices.checkFaceEnrolment(studentID);
         res.json(faceEnrolmentStatus);
@@ -59,10 +60,11 @@ const scanFace = async(req, res)=>{
 const getUpcomingClassSessions = async(req, res)=>{
     try{
         console.log('Request for upcoming class has been made'); 
-        const {studentID} = req.body;        
+        const {studentID} = req.params;        
         const data = await studentServices.getUpcomingClassSessions(studentID);
-        
-        if(data.upcomingClassSessions.length > 0){
+        if(data.upcomingClassSessions.length > 0){            
+            
+            
             res.json(data);
         }
         else{
@@ -73,6 +75,19 @@ const getUpcomingClassSessions = async(req, res)=>{
         res.status(500).json(error.message); 
     }
 }
+
+const getTrimesterData = async(req, res)=>{
+    try{
+        console.log('Request for trimester data has been made'); 
+        const {studentID} = req.params;        
+        const data = await studentServices.getTrimesterData(studentID);
+        res.json(data);
+    }catch(error){
+        console.log(error);
+        res.status(500).json(error.message); 
+    }
+}
+
 
 const getCheckInPermission = async(req, res)=>{
     try{
@@ -109,7 +124,7 @@ const getStudentAttendanceData = async(req, res)=>{
         else{
             throw new Error('Something went wrong');
         }
-    }catch(e){
+    }catch(error){
         console.log(error);
         res.status(500).json(error.message); 
     }
@@ -124,9 +139,9 @@ const getAttendanceDetails = async(req, res)=>{
             res.json(result);
         }
         else{
-            throw new Error('Something went wrong');
+            throw new Error('No attendance details found');
         }
-    }catch(e){
+    }catch(error){
         console.log(error);
         res.status(500).json(error.message)
         
@@ -153,10 +168,9 @@ const getCurrentWeekSchedule = async (req, res)=>{
 
 const authUser = async (req,res)=>{
     try {
-        console.log('req for auth');
+        console.log('Request for authentication has been made');
         const {studentID, password} = req.body;
         const result = await studentServices.authUser(studentID, password);
-        console.log(result);
         
         if(result.length>0){
             res.json(result);
@@ -182,6 +196,6 @@ module.exports = {
     getStudentAttendanceData,
     getAttendanceDetails,
     getCurrentWeekSchedule,
+    getTrimesterData,
     authUser
-
 }

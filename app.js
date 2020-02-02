@@ -8,7 +8,11 @@ app.use(cors());
 app.use(express.json());
 
 //is it working
-app.get('/', (req,res)=>{ res.json('Its working!');});
+app.get('/', (req,res)=>{ 
+    console.log('received net req');
+    
+    res.json('Its working!');
+});
 
 //routes
 app.use('/attendanceManagement', attendanceMgmtRoutes);

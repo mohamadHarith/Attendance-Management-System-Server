@@ -25,8 +25,8 @@ const enrolFace = async (uploadedImagesFile, studentID)=>{
         const enroledFaceDescriptors = [];
         
         await enroledFaceDescriptors.push(await faceRecognitionService.getFaceDescriptor(picture01Path));
-        await enroledFaceDescriptors.push(await faceRecognitionService.getFaceDescriptor(picture02Path));
-        await enroledFaceDescriptors.push(await faceRecognitionService.getFaceDescriptor(picture03Path));    
+        //await enroledFaceDescriptors.push(await faceRecognitionService.getFaceDescriptor(picture02Path));
+        //await enroledFaceDescriptors.push(await faceRecognitionService.getFaceDescriptor(picture03Path));    
 
         //console.log(enroledFaceDescriptors);
         const JSONDescriptor = await JSON.stringify(enroledFaceDescriptors);
@@ -60,6 +60,9 @@ const recogniseFace = async(queryImageFile, studentID)=>{
     }
 }
 
+ //helper function
+ delay = ms => new Promise(res => setTimeout(res, ms));
+
 const getUpcomingClassSessions = async(studentID)=>{
     try{
         
@@ -77,9 +80,10 @@ const getUpcomingClassSessions = async(studentID)=>{
             data.weekData.Day_Of_Week = moment(upcomingClassSessionsData[0].Day_Of_Week).format('dddd');
             data.weekData.Date = moment(upcomingClassSessionsData[0].Date).format('DD MMM YYYY');
 
-            upcomingClassSessionsData.forEach((item)=>{
+          await upcomingClassSessionsData.forEach(async (item)=>{
                 item.Start_Time = moment(item.Start_Time).format('hh:mma');
                 item.End_Time = moment(item.End_Time).format('hh:mma');
+                item.attendancePercenatage = await getAttendancePercentage(studentID, item.Class_ID);
                 delete(item.Trimester_Name);
                 delete(item.Week);
                 delete(item.Day_Of_Week);
@@ -89,6 +93,33 @@ const getUpcomingClassSessions = async(studentID)=>{
             });
 
             data.upcomingClassSessions = upcomingClassSessionsData;
+        }
+        await delay(100);
+        return data;
+        
+    }catch(error){
+        console.log(error.message);
+        throw new Error(error.message);
+    }
+}
+
+const getTrimesterData = async(studentID)=>{
+    try{
+        
+        let data = {
+          
+        }
+
+        const trimesterData = await studentDB.getCurrentTrimester(studentID);     
+        if(trimesterData.length>0){            
+            data.Trimester_Name = trimesterData[0].Trimester_Name;
+            data.Week = moment(trimesterData[0].Date)
+            .diff(moment(trimesterData[0].Trimester_Start_Date), 'weeks')+1;
+            data.Day_Of_Week = moment(trimesterData[0].Day_Of_Week).format('dddd');
+            data.Date = moment(trimesterData[0].Date).format('DD MMM YYYY');
+        }
+        else{
+            throw new Error('No trimester data');
         }
         return data;
         
@@ -154,12 +185,12 @@ const setStudentAttendance = async(studentID, classID, classSessionID, attendanc
         }
          const result = await studentDB.setStudentAttendance(studentID, classID, classSessionID, attendanceStatus);
            if (result.length == 1){
-              queryResult.message = 'Succesfully checked in.'
+              queryResult.message = 'Succesfully checked in'
               queryResult.querySuccessful = true;
               return queryResult;
            }
             else {
-               queryResult.message = 'Something went wrong.'
+               queryResult.message = 'Something went wrong'
                queryResult.querySuccessful = false;
                 return queryResult;
         } 
@@ -348,6 +379,7 @@ module.exports={
     getAttendancePercentage,
     getAttendanceData,
     getAttendanceDetails,
+    getTrimesterData,
     getScheduleForCurrentWeek,
     authUser
 }

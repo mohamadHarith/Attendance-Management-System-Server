@@ -16,24 +16,11 @@ router.post('/enrolFace', enrolFaceUploader.uploader.fields([
     studentController.enrolFace
 );
 
-// router.post('/enrolFace', ()=>{
-//     console.log('hello world');
-//     var uploader = enrolFaceUploader.uploader.fields([
-//             {name: 'picture01', maxCount:1},
-//             {name: 'picture02', maxCount:1},
-//             {name: 'picture03', maxCount:1}
-//         ]);
-//         console.log('world hello');
-//         return uploader;
-// },
-//     studentController.enrolFace
-// );
-
 router.get('/getStudentImage/:studentID', studentController.getStudentImage);
 
 router.post('/scanFace', scanFaceUploader.uploader.single('scanFaceImage'), studentController.scanFace);
 
-router.post('/upcomingClassSessions', studentController.getUpcomingClassSessions);
+router.get('/upcomingClassSessions/:studentID', studentController.getUpcomingClassSessions);
 
 router.post('/checkInPermission', studentController.getCheckInPermission);
 
@@ -45,7 +32,8 @@ router.get('/getAttendanceDetails/:classID/:studentID', studentController.getAtt
 
 router.get('/getCurrentWeekSchedule/:studentID', studentController.getCurrentWeekSchedule);
 
-router.post('/authStudent', studentController.authUser)
+router.post('/authStudent', studentController.authUser);
 
+router.get('/getTrimesterData/:studentID', studentController.getTrimesterData);
 
 module.exports = router;

@@ -53,7 +53,7 @@ const getUpcomingClassSessions = async(studentID)=>{
         'Trimester.End_Date as Trimester_End_Date','Class Session.Class_Session_ID', 
         'Class Session.Class_ID','Class Session.Date', 
         'Class Session.Start_Time','Class Session.End_Time', 
-        'Subject.Subject_Name', 
+        'Subject.Subject_Name', 'Subject.Subject_ID',
         'Class.Type', 'Class.Section', 'Class.Class_ID',
         'Venue.Venue_ID', 'Venue.Name as Venue_Name'
         )
@@ -66,6 +66,20 @@ const getUpcomingClassSessions = async(studentID)=>{
         .where('Enrolment.Student_ID', studentID)
         .where('Class Session.Date', new Date())
         .where('Class Session.End_Time', '>', new Date())  
+    }catch(error){
+        throw new Error(error.message);  
+    }
+}
+
+const getCurrentTrimester = async(studentID)=>{
+    try{
+        return await db.select(
+        'Trimester.Name as Trimester_Name', 'Trimester.Start_Date as Trimester_Start_Date',  
+        'Trimester.End_Date as Trimester_End_Date',
+        )
+        .from('Enrolment')
+        .innerJoin('Trimester', 'Enrolment.Trimester_ID', 'Trimester.Trimester_ID')
+        .where('Enrolment.Student_ID', studentID)
     }catch(error){
         throw new Error(error.message);  
     }
@@ -159,14 +173,6 @@ const getAttendanceForClassSessions = async(classID, studentID)=>{
     }
 }
 
-const getScheduleForCurrentWeek = async()=>{
-    try{
-        return await db.select('')
-    }catch(error){
-        throw new Error(error.message);
-    }
-}
-
 const getCurrentTrimesterID = async()=>{
     try{
         return await db.select('Trimester_ID', 'Start_Date').from('Trimester')
@@ -225,6 +231,7 @@ module.exports = {
     getAttendanceForClassSessions,
     getCurrentTrimesterID,
     getListOfClassSessionsBetweenDate,
+    getCurrentTrimester,
     authUser
 };
 

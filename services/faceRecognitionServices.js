@@ -29,7 +29,7 @@ class faceRecognitionServices{
         try{
             const imageFile = await fs.readFileSync(imagePath);        
             //create canvas
-            const canvas = createCanvas(900, 900);
+            const canvas = createCanvas(850, 850);
             const ctx = canvas.getContext('2d');
             const img = new Image()
             img.onload = async() => ctx.drawImage(img, 0, 0)
@@ -37,7 +37,7 @@ class faceRecognitionServices{
             img.src = imageFile            
             //face detection
             const option = new faceapi.TinyFaceDetectorOptions({
-                inputSize: 512,
+                inputSize: 608,
                 scoreThreshold: 0.6
             });
             const useTinyModel = true;
