@@ -168,6 +168,8 @@ const getAttendanceForClassSessions = async(classID, studentID)=>{
         .where('Trimester.End_Date', '>', new Date())
         .where('Enrolment.Student_ID', studentID)
         .where('Enrolment.Class_ID', classID)
+        .whereNot('Class Session.Date', '>', new Date())
+        .orderBy('Class Session.Date')
     }catch(error){
         throw new Error(error.message);
     }

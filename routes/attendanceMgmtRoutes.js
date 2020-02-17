@@ -7,6 +7,7 @@ router.get('/classList', attendanceMgmtController.classList);
 router.get('/subjectList', attendanceMgmtController.subjectList);
 router.get('/classList/classSessionList/:classID', attendanceMgmtController.classSessionList);
 router.post('/studentsAttendance', attendanceMgmtController.studentsAttendance)
+router.post('/updateAttendance', attendanceMgmtController.updateAttendance);
 
 
 module.exports = router;

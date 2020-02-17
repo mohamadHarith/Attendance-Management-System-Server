@@ -28,7 +28,6 @@ const enrolFace = async (uploadedImagesFile, studentID)=>{
         //await enroledFaceDescriptors.push(await faceRecognitionService.getFaceDescriptor(picture02Path));
         //await enroledFaceDescriptors.push(await faceRecognitionService.getFaceDescriptor(picture03Path));    
 
-        //console.log(enroledFaceDescriptors);
         const JSONDescriptor = await JSON.stringify(enroledFaceDescriptors);
 
         return await studentDB.setStudentFaceData(studentID, JSONDescriptor);
@@ -131,29 +130,19 @@ const getTrimesterData = async(studentID)=>{
 
 const getCheckInPermission = async(studentID, classSessionID )=>{
     try{
-        //1. Check if class session is ongoing
-        //2. Check the check in permision of the class session
+        //1. Check if class session is ongoing and check in permission is allowed
         const isCheckinAllowed = await studentDB.getCheckInPermission(classSessionID);
         let checkInMessage = {
             message: '',
             permission: false
         };
+        //if class is ongoing and check in permission is allowed
         if(isCheckinAllowed.length == 1){
-            //3. Check if the student already checked in to the class session
+            //2. Check if the student already checked in to the class session
             const hasStudentCheckedIn = await studentDB.getStudentAttendanceData(studentID, classSessionID);
+            //if the student havent checked in to the class session
             if(hasStudentCheckedIn.length == 0){
                 // //set attendance
-                // const result = await studentDB.setStudentAttendance(studentID, classSessionID, 'Present');
-                // if (result.length == 1){
-                //     checkInMessage.message = 'Succesfully checked in.'
-                //     checkInMessage.success = true;
-                //     return checkInMessage;
-                // }
-                // else {
-                //     checkInMessage.message = 'Something went wrong.'
-                //     checkInMessage.success = false;
-                //     return checkInMessage;
-                // }
                 checkInMessage.message = ''
                 checkInMessage.permission = true;
                 return checkInMessage;
@@ -185,7 +174,7 @@ const setStudentAttendance = async(studentID, classID, classSessionID, attendanc
         }
          const result = await studentDB.setStudentAttendance(studentID, classID, classSessionID, attendanceStatus);
            if (result.length == 1){
-              queryResult.message = 'Succesfully checked in'
+              queryResult.message = 'Successfully checked in'
               queryResult.querySuccessful = true;
               return queryResult;
            }
@@ -207,7 +196,7 @@ const getAttendancePercentage = async(studentID, classID)=>{
         const attendancePercentage = {
             numberOfClassSessionsAttended: numberofAttendance[0].count,
             numberOfTotalClassSessions: numberofClassSessions[0].count,
-            percentage: (parseInt(numberofAttendance[0].count)/parseInt(numberofClassSessions[0].count))*100
+            percentage: Math.round((parseInt(numberofAttendance[0].count)/parseInt(numberofClassSessions[0].count))*100)
         }
         return attendancePercentage;
     }catch(error){
@@ -220,9 +209,7 @@ const getAttendanceData = async(studentID)=>{
     try{
         const attendanceData = await studentDB.getEnrolledClassList(studentID).then(async (classList)=>{
             if(classList.length > 0){
-                
                 for(var i=0; i<classList.length; i++){
-                    //const attendanceData = await studentDB.getAttendanceForClassSessions(classList[i].Class_ID, studentID);
                     const attendancePercentage = await getAttendancePercentage(studentID, classList[i].Class_ID);
                     classList[i].numberOfClassSessions = attendancePercentage.numberOfTotalClassSessions;
                     classList[i].numberOfClassSessionsAttended = attendancePercentage.numberOfClassSessionsAttended;
@@ -259,8 +246,7 @@ const getAttendanceDetails = async(classID, studentID)=>{
             });
 
         }
-        return attendanceDetails;
-        
+        return attendanceDetails;        
     }catch(error){
         console.log(error.message);
         throw new Error(error.message);
@@ -269,28 +255,20 @@ const getAttendanceDetails = async(classID, studentID)=>{
 
 const getScheduleForCurrentWeek = async (studentID)=>{
     try{
-        //get current week
+        //get current week number
         //get  first date of the week
-        //add 5 days for the last date of the week
+        //add 4 days for the first date to get the last date of the week
         const currentTrimester = await studentDB.getCurrentTrimesterID();
-
         const currentWeek =  moment(new Date()).diff(moment(currentTrimester[0].Start_Date), 'weeks');
-
-        //const firstDateOfTheWeek = moment(currentTrimester[0].Start_Date).add(currentWeek, 'w').format('DD/MM/YYYY');
-        //const lastDateOfTheWeek = moment(firstDateOfTheWeek).add(4, 'd').format('DD/MM/YYYY');
-
         const firstDateOfTheWeek = moment(currentTrimester[0].Start_Date).add(currentWeek, 'w').toDate();
         const lastDateOfTheWeek = moment(firstDateOfTheWeek).add(4, 'd').toDate();
-
-        const listOfClassSessionsBetweenDate = await studentDB.getListOfClassSessionsBetweenDate(studentID, firstDateOfTheWeek, lastDateOfTheWeek)
-
+        const listOfClassSessionsBetweenDate = await studentDB.getListOfClassSessionsBetweenDate(studentID, firstDateOfTheWeek, lastDateOfTheWeek);
         listOfClassSessionsBetweenDate.forEach((item)=>{
             item.Day = moment(item.Date).format('dddd');
             item.Date = moment(item.Date).format('DD/MM/YYYY');
             item.Start_Time = moment(item.Start_Time).format('hh:mma');
             item.End_Time = moment(item.End_Time).format('hh:mma');
         })
-
         let mondayClasses = {
             name: 'Monday',
             classes: []
@@ -311,7 +289,6 @@ const getScheduleForCurrentWeek = async (studentID)=>{
             name: 'Friday',
             classes: []
         }
-
         for(var i=0; i<listOfClassSessionsBetweenDate.length; i++){
             if(listOfClassSessionsBetweenDate[i].Day == 'Monday'){
                 mondayClasses.classes.push(listOfClassSessionsBetweenDate[i]);
@@ -329,9 +306,7 @@ const getScheduleForCurrentWeek = async (studentID)=>{
                 fridayClasses.classes.push(listOfClassSessionsBetweenDate[i]);
             }            
         }
-
         let scheduleData = [];
-
         if(mondayClasses.classes.length>0){
             scheduleData.push(mondayClasses);
         }
@@ -346,13 +321,8 @@ const getScheduleForCurrentWeek = async (studentID)=>{
         }
         if(fridayClasses.classes.length>0){
             scheduleData.push(fridayClasses);
-        }
-        
-
+        }     
         return scheduleData;
-
-
-
     }catch(error){
         console.log(error.message);
         throw new Error(error.message);
